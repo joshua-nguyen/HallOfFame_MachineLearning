@@ -1,4 +1,5 @@
 import numpy as np
+import csv
 
 class record_b(): #18 vars
     G    = 0
@@ -57,6 +58,27 @@ class record_b(): #18 vars
         self.SH   += other.SH 
         self.SF   += other.SF 
         self.GIDP += other.GIDP
+    
+    def get_all(self):
+        return [
+            self.G    ,
+            self.AB   ,
+            self.R    ,
+            self.H    ,
+            self.SecB ,
+            self.TB   ,
+            self.HR   ,
+            self.RBI  ,
+            self.SB   ,
+            self.CS   ,
+            self.BB   ,
+            self.SO   ,
+            self.IBB  ,
+            self.HBP  ,
+            self.SH   ,
+            self.SF   ,
+            self.GIDP 
+        ]
 
 class batter():
     pid = ""
@@ -85,42 +107,53 @@ class batter():
     def add_record(self,other):
         self.record + other.get_record()
 
+    def unpack(self):
+        package = [
+            self.pid    ,
+            self.year   ,
+            self.stint  ,
+            self.teamid ,
+            self.lgID   
+        ]
+        package.extend(self.record.get_all())
+        return package
+
 def list_find(a, obj):
-    for i in a:
-        if i == obj:
-            return i
+    for i in range(len(a)-1,0,-1):
+        if a[i] == obj:
+            return a[i]
     return False
 
 
+def merge_batters():
+    mlb_batting = np.genfromtxt(
+        'npb_Batting.csv',
+        delimiter=',',
+        dtype=['U9', int, int, 'U3', 'U3', int , int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int],
+        skip_header=1,
+        missing_values={0:"",1:" "},
+        filling_values={0:0, 1:0},
+        names=[
+            'playerID','yearID','stint','teamID','lgID','G','AB','R','H','2B','3B','HR','RBI','SB','CS','BB','SO','IBB','HBP','SH','SF','GIDP'
+        ])
+    
+    batters = []
+    count = 0
+    for i in mlb_batting:
+        myrec=record_b(i[5],i[6],i[7],i[8],i[9],i[10],i[11],i[12],i[13],i[14],i[15],i[16],i[17],i[18],i[19],i[20],i[21])
+        mybat = batter(i[0],i[1],i[2],i[3],i[4],myrec)
+        found = list_find(batters, mybat)
+        if found:
+            found.add_record(mybat)
+        else:
+            batters.append(mybat)
+        print("current: {}, unique players: {} ".format(count,len(batters)))
+        count+=1
+    unpacked =[]
+    for i in batters:
+        unpacked.append(i.unpack())
 
-mlb_batting = np.genfromtxt(
-    'mlb_Batting.csv',
-    delimiter=',',
-    dtype=None,
-    missing_values={0:"", 'b':"N\A", 2:"???"},
-    filling_values={0:0, 'b':0, 2:-999},
-    names=[
-        'playerID','yearID','stint','teamID','lgID','G','AB','R','H','2B','3B','HR','RBI','SB','CS','BB','SO','IBB','HBP','SH','SF','GIDP'
-    ])
-'''
-mlb_pitching = np.genfromtxt(
-    'mlb_Batting.csv',
-    delimiter=',',
-    dtype=None,
-    names=[
-        'playerID','yearID','stint','teamID','lgID','W','L','G','GS','CG','SHO','SV','IPouts','H','ER','HR','BB','SO','BAOpp','ERA','IBB','WP','HBP','BK','BFP','GF','R','SH','SF','GIDP'
-    ])
-'''
-batters = []
-count = 0
-for i in mlb_batting:
-    myrec=record_b(i[5],i[6],i[7],i[8],i[9],i[10],i[11],i[12],i[13],i[14],i[15],i[16],i[17],i[18],i[19],i[20],i[21])
-    mybat = batter(i[0],i[1],i[2],i[3],i[4],myrec)
-    found = list_find(batters, mybat)
-    if found:
-        found.add_record(mybat)
-    else:
-        batters.append(mybat)
-    print(count)
-    count+=1
-np.savetxt("test.csv", batters, delimiter=",")
+    with open("mlb_bat_cumul.csv","w+") as my_csv:
+        csvWriter = csv.writer(my_csv,delimiter=',')
+        csvWriter.writerows(unpacked)
+    return
