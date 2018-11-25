@@ -16,15 +16,16 @@ table = np.asarray(a,dtype= None, order=None)
 X = table[:,5:29]
 y = table[:,30]
 
+
 fold_av=0
 for fold in range(10):
     chunk = math.floor(len(table)/10)
     start = fold*chunk
     end = start+chunk
-    testX = X[start:end,:]
-    trainX = X[0:start,:].extend(X[end:len(table)-1,:])
-    testy= y[start:end,:]
-    trainy = y[0:start,:].extend(y[end:len(table)-1,:])
+    trainX = np.copy(X)
+    testX = np.delete(trainX,np.s_[start:end])
+    trainy = np.copy(y)
+    testy = np.delete(trainy,np.s_[start:end])
     clf = svm.SVC(gamma='scale')
     clf.fit(trainX,trainy)
     subTot=0
