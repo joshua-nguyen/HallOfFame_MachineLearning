@@ -92,16 +92,23 @@ for i in (mlb_pit, mlb_bat, npb_pit):
     else:
         print ("NPB Pitchers dataset:")
     
+    # Decision Tree
     for j in ("gini", "entropy"):
         with MyTimer():
             print("The accuracy of Tree classifier with {} criterion is {} ".format(j,folds(*i, num_folds, tree.DecisionTreeClassifier(criterion = j, random_state=0 ))))
+    
+    # K Nearest Neighbours
     for j in ("uniform","distance"):
         for k in range(1,16):
             with MyTimer():
                 print("The accuracy of K Neighbours classifier with {} weights and k = {} is {} ".format(j,k,folds(*i, num_folds, neighbors.KNeighborsClassifier(k, weights=j))))
+    
+    # Support Vector Machine
     for j in ("linear", "poly", "rbf", "sigmoid"):
         with MyTimer():
             print("The accuracy of SVM classifier with {} kernel is {} ".format(j,folds(*i, num_folds, svm.SVC(kernel = j, gamma = "scale"))))
+    
+    # ANN
     for j in ("identity", "logistic", "tanh", "relu"):
         for k in range(10,101,10):
             with MyTimer():
