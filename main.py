@@ -4,6 +4,7 @@ import math
 import numpy as np
 import time
 
+from helper_functions import folds, output_vector
 from sklearn import tree
 from sklearn import neighbors
 from sklearn import svm
@@ -28,29 +29,7 @@ def warn(*args, **kwargs):
     pass
 warnings.warn = warn
 
-def folds(data_set, start_column, end_column, target_column, num_folds, model):
-    fold_classification_total = 0
-    for fold in range(num_folds):
-        chunk = math.floor(len(data_set)/num_folds)
-        start = fold*chunk
-        end = start+chunk
 
-        data = np.copy(data_set[:,start_column:end_column])
-        data = data.astype(float)
-        target = np.copy(data_set[:,target_column])
-        train_data = np.delete(data, np.s_[start:end], axis = 0)
-        test_data = data[start:end]
-        train_target = np.delete(target, np.s_[start:end], axis = 0)
-        test_target = target[start:end]
-        model.fit(train_data, train_target)
-
-        subtotal = 0
-        for i in range(end-start):
-            if model.predict([test_data[i]]) == test_target[i]:
-                subtotal += 1
-        fold_mean = subtotal / chunk
-        fold_classification_total += fold_mean
-    return fold_classification_total / num_folds
 
 
 """aardsda01,2004,1,SFN,NL,1,0,11,0,0,0,0,32,20,8,1,10,5,0.417,6.75,0,0,2,0,61,5,8,0,1,1,0"""
@@ -84,35 +63,77 @@ npb_pit = (npb_pitchers, 5, 27, 27)
 
 num_folds = 10
 
+output_vector_collection = []
 for i in (mlb_pit, mlb_bat, npb_pit):
     if i is mlb_pit:
-        print ("MLB Pitchers dataset:")
+        name_data = ("MLB Pitchers dataset:")
     elif i is mlb_bat:
-        print ("MLB Batters dataset:")
+        name_data = ("MLB Batters dataset:")
     else:
-        print ("NPB Pitchers dataset:")
+        name_data = ("NPB Pitchers dataset:")
+    print(name_data)
     
+    output_vectors = []
     # Decision Tree
     for j in ("gini", "entropy"):
         with MyTimer():
-            print("The accuracy of Tree classifier with {} criterion is {} ".format(j,folds(*i, num_folds, tree.DecisionTreeClassifier(criterion = j, random_state=0 ))))
+            confusion = folds(*i, num_folds, tree.DecisionTreeClassifier(criterion = j, random_state=0 ))
+            print(confusion)
+            ov = output_vector(confusion)
+            print("The accuracy of Tree classifier with {} criterion is {} ".format(j,ov[4]))
+            print("The F1-score of Tree classifier with {} criterion is {} ".format(j,ov[7]))
+            output_vectors.append(ov)
     
     # K Nearest Neighbours
     for j in ("uniform","distance"):
         for k in range(1,16):
             with MyTimer():
-                print("The accuracy of K Neighbours classifier with {} weights and k = {} is {} ".format(j,k,folds(*i, num_folds, neighbors.KNeighborsClassifier(k, weights=j))))
-    
+                
+                confusion = folds(*i, num_folds, neighbors.KNeighborsClassifier(k, weights=j))
+                print(confusion)
+                ov = output_vector(confusion)
+                print("The accuracy of K Neighbours classifier with {} weights and k = {} is {} ".format(j,k,ov[4]))
+                print("The F1-score of K Neighbours classifier with {} weights and k = {} is {} ".format(j,k,ov[7]))
+                output_vectors.append(ov)
+
     # Support Vector Machine
     for j in ("linear", "poly", "rbf", "sigmoid"):
         with MyTimer():
-            print("The accuracy of SVM classifier with {} kernel is {} ".format(j,folds(*i, num_folds, svm.SVC(kernel = j, gamma = "scale"))))
+            print("The accuracy of SVM classifier with {} kernel is {} ".format(j,))
+
+            confusion = folds(*i, num_folds, svm.SVC(kernel = j, gamma = "scale"))
+            print(confusion)
+            ov = output_vector(confusion)
+            print("The accuracy of SVM classifier with {} kernel is {} ".format(j,ov[4]))
+            print("The F1-score of SVM classifier with {} kernel is {} ".format(j,ov[7]))
+            output_vectors.append(ov)
     
     # ANN
-    for j in ("identity", "logistic", "tanh", "relu"):
+    for j in ("identity", "logistic", "relu"):
         for k in range(10,101,10):
             with MyTimer():
-                print("The accuracy of Multilayer Preceptron classifier with one hidden layer, {} hidden neurons, and {} activation is {} ".format(k,j,folds(*i, num_folds, neural_network.MLPClassifier(hidden_layer_sizes=(k,),activation=j))))
+                confusion = folds(*i, num_folds, neural_network.MLPClassifier(hidden_layer_sizes=(k,),activation=j))
+                print(confusion)
+                ov = output_vector(confusion)
+                print("The accuracy of Multilayer Preceptron classifier with one hidden layer, {} hidden neurons, and {} activation is {} ".format(k,j,ov[4]))
+                print("The F1-score of Multilayer Preceptron classifier with one hidden layer, {} hidden neurons, and {} activation is {} ".format(k,j,ov[7]))
+                output_vectors.append(ov)
+                
             with MyTimer():
-                print("The accuracy of Multilayer Preceptron classifier with two hidden layer, {} hidden neurons on each layer, and {} activation is {} ".format(k,j,folds(*i, num_folds, neural_network.MLPClassifier(hidden_layer_sizes=(k,k,),activation=j))))
+                confusion = folds(*i, num_folds, neural_network.MLPClassifier(hidden_layer_sizes=(k,k,),activation=j))
+                print(confusion)
+                ov = output_vector(confusion)
+                print("The accuracy of Multilayer Preceptron classifier with one hidden layer, {} hidden neurons, and {} activation is {} ".format(k,j,ov[4]))
+                print("The F1-score of Multilayer Preceptron classifier with one hidden layer, {} hidden neurons, and {} activation is {} ".format(k,j,ov[7]))
+                output_vectors.append(ov)
     print(" ")
+    output_vector_collection.append( (name_data, output_vectors) )
+
+for x in output_vector_collection:
+    print(x[0])
+    for y in x[1]:
+        for z in y:
+            print("{},".format(y), end = "")
+        print(x[1][-1])
+    print("\n")
+
