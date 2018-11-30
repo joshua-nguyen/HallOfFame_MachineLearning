@@ -54,9 +54,13 @@ def folds(data_set, start_column, end_column, target_column, num_folds, model):
     return confusion
 
 def precision(confusion):
+    if confusion[TP] + confusion[FP] == 0:
+        return "N/A"
     return confusion[TP] / (confusion[TP] + confusion[FP])
 
 def recall(confusion):
+    if confusion[TP] + confusion[FN] == 0:
+        return "N/A"
     return confusion[TP] / (confusion[TP] + confusion[FN])
 
 def accuracy(confusion):
@@ -65,6 +69,8 @@ def accuracy(confusion):
 def f1_score(confusion):
     p = precision(confusion)
     r = recall(confusion)
+    if p == "N/A" or r == "N/A" or (p + r == 0):
+        return "N/A"
     return 2 * (p * r) / (p + r)
 
 def output_vector(confusion):

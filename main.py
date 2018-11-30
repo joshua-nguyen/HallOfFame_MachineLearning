@@ -97,9 +97,8 @@ for i in (mlb_pit, mlb_bat, npb_pit):
                 output_vectors.append(ov)
 
     # Support Vector Machine
-    for j in ("linear", "poly", "rbf", "sigmoid"):
+    for j in ("rbf", "sigmoid"):
         with MyTimer():
-            print("The accuracy of SVM classifier with {} kernel is {} ".format(j,))
 
             confusion = folds(*i, num_folds, svm.SVC(kernel = j, gamma = "scale"))
             print(confusion)
@@ -123,8 +122,8 @@ for i in (mlb_pit, mlb_bat, npb_pit):
                 confusion = folds(*i, num_folds, neural_network.MLPClassifier(hidden_layer_sizes=(k,k,),activation=j))
                 print(confusion)
                 ov = output_vector(confusion)
-                print("The accuracy of Multilayer Preceptron classifier with one hidden layer, {} hidden neurons, and {} activation is {} ".format(k,j,ov[4]))
-                print("The F1-score of Multilayer Preceptron classifier with one hidden layer, {} hidden neurons, and {} activation is {} ".format(k,j,ov[7]))
+                print("The accuracy of Multilayer Preceptron classifier with two hidden layer, {} hidden neurons each, and {} activation is {} ".format(k,j,ov[4]))
+                print("The F1-score of Multilayer Preceptron classifier with two hidden layer, {} hidden neurons each, and {} activation is {} ".format(k,j,ov[7]))
                 output_vectors.append(ov)
     print(" ")
     output_vector_collection.append( (name_data, output_vectors) )
@@ -132,8 +131,8 @@ for i in (mlb_pit, mlb_bat, npb_pit):
 for x in output_vector_collection:
     print(x[0])
     for y in x[1]:
-        for z in y:
-            print("{},".format(y), end = "")
+        for z in y[:-1]:
+            print("{},".format(z), end = "")
         print(x[1][-1])
     print("\n")
 
